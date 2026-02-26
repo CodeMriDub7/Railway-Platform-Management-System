@@ -1,67 +1,63 @@
 // logic.js
 
-function getMinPlatformsWithAssignment(schedule) {
-    if (schedule.length === 0) return { count: 0, assignments: [] };
+function calculateStationRequirements(trainList) {
+    const BUFFER = 10 * 60000; // 10 mins standard
+    const REVERSAL_BUFFER = 25 * 60000; // 25 mins for Point 6
+    const MAX_STAY = 60 * 60000; // 1 hour for Point 5
 
-    // 1. Convert to Date objects and sort by arrival time
-    let trains = schedule.map(train => ({
-        ...train,
-        arrDate: new Date(train.arrival),
-        depDate: new Date(train.departure)
-    }));
-
-    trains.sort((a, b) => a.arrDate - b.arrDate);
-
-    let platforms = []; // Stores departure times of occupied platforms
-    let assignments = [];
-
-    trains.forEach(train => {
-        let assigned = false;
-
-        // 2. Look for a free platform (Current Arrival >= Last Departure)
-        for (let i = 0; i < platforms.length; i++) {
-            if (train.arrDate.getTime() >= platforms[i].getTime()) {
-                platforms[i] = train.depDate;
-                assignments.push({ 
-                    trainNo: train.trainNo, 
-                    platformNo: i + 1 
-                });
-                assigned = true;
-                break;
-            }
-        }
-
-        // 3. If no platform is free, assign a new one
-        if (!assigned) {
-            platforms.push(train.depDate);
-            assignments.push({ 
-                trainNo: train.trainNo, 
-                platformNo: platforms.length 
-            });
-        }
+    // 1. Point 3: Filter out trains where Arrival == Departure
+    const valid = trainList.filter(t => {
+        const a = new Date(t.arrival).getTime();
+        const d = new Date(t.departure).getTime();
+        return a !== d;
     });
 
-    return { count: platforms.length, assignments };
-}
+    // 2. Pre-process and Sort by Arrival & Priority
+    const processed = valid.map(t => ({
+        ...t,
+        arr: new Date(t.arrival).getTime(),
+        dep: new Date(t.departure).getTime(),
+        // Priority Logic: Vande Bharat gets higher rank
+        priority: t.name.toLowerCase().includes("vande bharat") ? 10 : 1
+    })).sort((a, b) => {
+        if (a.arr !== b.arr) return a.arr - b.arr;
+        return b.priority - a.priority; // Higher priority first if times are same
+    });
 
-function calculateStationRequirements(trainList) {
-    const upTrains = trainList.filter(t => t.direction.toLowerCase().startsWith('u'));
-    const downTrains = trainList.filter(t => !t.direction.toLowerCase().startsWith('u'));
+    let platforms = []; // Stores the "Free at" timestamp for each platform
+    let schedule = [];
 
-    const upRes = getMinPlatformsWithAssignment(upTrains);
-    const downRes = getMinPlatformsWithAssignment(downTrains);
+    processed.forEach(train => {
+        // Point 6: Apply Reversal Buffer if type is 'R'
+        const currentBuffer = train.type === 'R' ? REVERSAL_BUFFER : BUFFER;
+        
+        // Point 5: If stay is very long, move to yard after 1 hour to free platform
+        const platformRelease = (train.dep - train.arr) > MAX_STAY ? (train.arr + MAX_STAY) : train.dep;
 
-    // Offset downstream platform numbers so they start after upstream
-    const adjustedDown = downRes.assignments.map(a => ({
-        trainNo: a.trainNo,
-        platformNo: a.platformNo + upRes.count
-    }));
+        // Point 4: Find first available platform (Sharing logic)
+        let pIdx = platforms.findIndex(freeAt => (freeAt + currentBuffer) <= train.arr);
+
+        if (pIdx === -1) {
+            platforms.push(platformRelease);
+            pIdx = platforms.length - 1;
+        } else {
+            platforms[pIdx] = platformRelease;
+        }
+
+        schedule.push({
+            name: train.name,
+            platform: pIdx + 1,
+            arrival: train.arrival,
+            departure: train.departure,
+            type: train.type,
+            priority: train.priority,
+            status: (train.dep - train.arr) > MAX_STAY ? "Moved to Yard (Long Stay)" : "Normal"
+        });
+    });
 
     return {
-        upstreamCount: upRes.count,
-        downstreamCount: downRes.count,
-        totalPlatforms: upRes.count + downRes.count,
-        assignments: [...upRes.assignments, ...adjustedDown]
+        total: platforms.length,
+        schedule: schedule
     };
 }
 
