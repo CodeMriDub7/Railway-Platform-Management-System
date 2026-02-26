@@ -6,24 +6,21 @@ const { calculateStationRequirements } = require('./logic');
 const app = express();
 const PORT = 3000;
 
-app.use(cors());
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 app.post('/calculate', (req, res) => {
     try {
         const { trains } = req.body;
-        if (!trains || !Array.isArray(trains)) {
-            return res.status(400).json({ success: false, error: "Invalid Data" });
-        }
+        if (!trains) return res.status(400).json({ success: false, error: "No data" });
 
         const results = calculateStationRequirements(trains);
         res.json({ success: true, results });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, error: "Server Calculation Error" });
+        res.status(500).json({ success: false, error: "Calculation Error" });
     }
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`🚀 StationMaster Server running on http://localhost:${PORT}`);
 });
