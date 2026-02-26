@@ -2,171 +2,108 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Railway Platform Calculator | Pro</title>
+    <title>StationMaster Pro Dashboard</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root { 
-            --bg-color: #f8f9fa; --text-color: #2c3e50; --container-bg: #ffffff;
-            --shadow: rgba(0, 0, 0, 0.08); --header-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --primary-color: #667eea; --success-color: #48bb78; --danger-color: #f56565;
-            --border-color: #e2e8f0; --input-bg: #f7fafc; --hover-bg: #edf2f7;
-        }
-        body.dark-mode {
-            --bg-color: #0f172a; --text-color: #e2e8f0; --container-bg: #1e293b;
-            --input-bg: #0f172a; --hover-bg: #334155; --border-color: #334155;
-        }
-        body {
-            font-family: 'Segoe UI', sans-serif; background-color: var(--bg-color);
-            color: var(--text-color); padding: 20px; min-height: 100vh;
-            display: flex; justify-content: center; transition: 0.4s;
-        }
-        .main-wrapper { width: 100%; max-width: 900px; }
-        .container { 
-            background: var(--container-bg); padding: 30px; border-radius: 16px; 
-            box-shadow: 0 10px 40px var(--shadow); margin-top: 40px; 
-        }
-        .header { text-align: center; margin-bottom: 25px; }
-        #theme-toggle { position: fixed; top: 20px; right: 20px; padding: 10px 20px; border-radius: 25px; cursor: pointer; background: var(--primary-color); color: white; border: none; }
-        
-        /* Table Styles */
-        .table-wrapper { overflow-x: auto; margin-top: 20px; border-radius: 10px; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: var(--header-bg); color: white; padding: 12px; font-size: 13px; text-transform: uppercase; }
-        td { padding: 10px; border-bottom: 1px solid var(--border-color); }
-        input, select { width: 100%; padding: 8px; border: 1.5px solid var(--border-color); border-radius: 6px; background: var(--input-bg); color: var(--text-color); }
-
-        /* Results Styling */
-        #result-box { margin-top: 30px; }
-        .summary-stats { 
-            display: flex; justify-content: space-around; background: var(--header-bg); 
-            color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; 
-        }
-        .results-container { 
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; 
-        }
-        .platform-card { 
-            background: var(--container-bg); border: 2px solid var(--primary-color); 
-            padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 4px 10px var(--shadow);
-        }
-        .plat-num { font-size: 24px; font-weight: bold; color: var(--primary-color); display: block; }
-        .train-tag { font-size: 12px; background: var(--hover-bg); padding: 3px 8px; border-radius: 10px; }
-
+        :root { --p: #3b82f6; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 40px; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--card); padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: var(--p); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        input, select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; width: 100%; }
         .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        button { padding: 12px 20px; border-radius: 8px; cursor: pointer; border: none; font-weight: bold; }
-        .btn-add { background: var(--success-color); color: white; }
-        .btn-calc { background: var(--primary-color); color: white; flex-grow: 1; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .add { background: #10b981; color: white; }
+        .calc { background: var(--p); color: white; }
+        .result-box { margin-top: 30px; display: none; padding: 20px; background: #eff6ff; border-radius: 8px; }
+        .train-card { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #dbeafe; }
+        .pf-badge { background: var(--p); color: white; padding: 4px 10px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-<button id="theme-toggle" onclick="document.body.classList.toggle('dark-mode')">🌓 Toggle Theme</button>
+<div class="container">
+    <h1>🚄 StationMaster Pro</h1>
+    <table id="inputTable">
+        <thead>
+            <tr>
+                <th>Train Name</th>
+                <th>Arrival</th>
+                <th>Departure</th>
+                <th>Flow Type</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-<div class="main-wrapper">
-    <div class="container">
-        <div class="header">
-            <h2>🚉 Railway Platform Planner</h2>
-            <p class="subtitle">Enter day-wise schedules to calculate platforms & assignments</p>
-        </div>
+    <div class="btn-group">
+        <button class="add" onclick="addRow()">+ Add Train</button>
+        <button class="calc" onclick="processData()">Calculate Schedule</button>
+    </div>
 
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Train No</th>
-                        <th>Direction</th>
-                        <th>Arrival (Date & Time)</th>
-                        <th>Departure (Date & Time)</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="train-table-body">
-                    <tr class="train-row">
-                        <td><input type="text" class="t-no" placeholder="12401"></td>
-                        <td>
-                            <select class="t-dir">
-                                <option value="Up">Upstream</option>
-                                <option value="Down">Downstream</option>
-                            </select>
-                        </td>
-                        <td><input type="datetime-local" class="t-arr"></td>
-                        <td><input type="datetime-local" class="t-dep"></td>
-                        <td><button class="delete-btn" onclick="this.parentElement.parentElement.remove()">❌</button></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="btn-group">
-            <button class="btn-add" onclick="addRow()">+ Add Train</button>
-            <button class="btn-calc" onclick="calculate()">Calculate Requirements</button>
-        </div>
-
-        <div id="result-box"></div>
+    <div id="result-box" class="result-box">
+        <h2>Total Platforms Needed: <span id="total-pf">0</span></h2>
+        <div id="schedule-list"></div>
     </div>
 </div>
 
 <script>
-    <!-- Inside your <script> tag -->
+    window.onload = () => addRow();
 
-    async function calculate() {
-        const rows = document.querySelectorAll('.train-row');
+    function addRow() {
+        const tbody = document.querySelector("#inputTable tbody");
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td><input type="text" class="name" placeholder="Vande Bharat"></td>
+            <td><input type="datetime-local" class="arr"></td>
+            <td><input type="datetime-local" class="dep"></td>
+            <td>
+                <select class="type">
+                    <option value="U">Upstream</option>
+                    <option value="D">Downstream</option>
+                    <option value="R">Reversal (Point 6)</option>
+                </select>
+            </td>
+            <td><button onclick="this.parentElement.parentElement.remove()">❌</button></td>
+        `;
+        tbody.appendChild(row);
+    }
+
+    async function processData() {
+        const rows = document.querySelectorAll("tbody tr");
         const trains = Array.from(rows).map(r => ({
-            trainNo: r.querySelector('.t-no').value,
-            direction: r.querySelector('.t-dir').value,
-            arrival: r.querySelector('.t-arr').value,
-            departure: r.querySelector('.t-dep').value
-        }));
+            name: r.querySelector(".name").value || "Express",
+            arrival: r.querySelector(".arr").value,
+            departure: r.querySelector(".dep").value,
+            type: r.querySelector(".type").value
+        })).filter(t => t.arrival && t.departure);
 
         try {
-            const response = await fetch('http://localhost:3000/calculate', {
+            const res = await fetch('http://localhost:3000/calculate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ trains })
             });
-
-            if (!response.ok) throw new Error("Server error: " + response.status);
-
-            // FIX: You must await the JSON parsing!
-            const data = await response.json(); 
-            
-            if (data.success && data.results) {
-                renderResults(data.results);
-            } else {
-                alert("Calculation failed: " + (data.error || "Unknown error"));
-            }
-        } catch (error) {
-            console.error("Fetch Error:", error);
-            alert("Could not connect to server. Make sure Node is running.");
-        }
+            const data = await res.json();
+            if (data.success) renderResults(data.results);
+        } catch (e) { alert("Server not responding!"); }
     }
 
     function renderResults(res) {
-        const box = document.getElementById('result-box');
-        // Summary bar
-        let html = `
-            <div class="summary-stats">
-                <div class="summary-item"><h4>Upstream</h4><p>${res.upstreamCount}</p></div>
-                <div class="summary-item"><h4>Downstream</h4><p>${res.downstreamCount}</p></div>
-                <div class="summary-item"><h4>Total</h4><p>${res.totalPlatforms}</p></div>
+        document.getElementById("result-box").style.display = "block";
+        document.getElementById("total-pf").innerText = res.total;
+        const list = document.getElementById("schedule-list");
+        list.innerHTML = res.schedule.map(t => `
+            <div class="train-card">
+                <div>
+                    <strong>${t.name}</strong> (${t.type === 'R' ? 'Reversal' : 'Through'})<br>
+                    <small>${new Date(t.arrival).toLocaleTimeString()} - ${new Date(t.departure).toLocaleTimeString()}</small>
+                </div>
+                <div><span class="pf-badge">Platform ${t.platform}</span></div>
             </div>
-            <h3 style="margin: 20px 0 10px;">Platform Assignments</h3>
-            <div class="results-container">`;
-        
-        // Individual Platform Cards
-        res.assignments.forEach(a => {
-            html += `
-                <div class="platform-card">
-                    <span class="plat-num">P${a.platformNo}</span>
-                    <span class="train-tag">Train ${a.trainNo}</span>
-                </div>`;
-        });
-        
-        box.innerHTML = html + `</div>`;
+        `).join('');
     }
-
-
 </script>
 </body>
 </html>
-
