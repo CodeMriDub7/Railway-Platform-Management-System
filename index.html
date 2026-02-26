@@ -2,35 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Railway Platform Managemnt System</title>
+    <title>Railway Platform Management System - Dashboard</title>
     <style>
-        :root { --p: #3b82f6; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 40px; }
-        .container { max-width: 900px; margin: 0 auto; background: var(--card); padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: var(--p); }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
-        input, select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; width: 100%; }
-        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .add { background: #10b981; color: white; }
+        :root { --p: #3b82f6; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --success: #10b981; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: var(--card); padding: 30px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: var(--p); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background: #f1f5f9; padding: 12px; font-size: 12px; text-transform: uppercase; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
+        input, select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; font-size: 14px; }
+        .btn-group { display: flex; gap: 10px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .add { background: var(--success); color: white; }
         .calc { background: var(--p); color: white; }
-        .result-box { margin-top: 30px; display: none; padding: 20px; background: #eff6ff; border-radius: 8px; }
-        .train-card { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #dbeafe; }
-        .pf-badge { background: var(--p); color: white; padding: 4px 10px; border-radius: 4px; }
+        .result-box { margin-top: 30px; display: none; padding: 20px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd; }
+        .train-card { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; margin-bottom: 8px; border-radius: 6px; border-left: 5px solid #cbd5e1; }
+        .priority-high { border-left-color: #ef4444; }
+        .pf-badge { background: var(--p); color: white; padding: 6px 12px; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Railway Platform Management System</h1>
+    <h1>🚄 Railway Platform Management System</h1>
     <table id="inputTable">
         <thead>
             <tr>
-                <th>Train Name</th>
+                <th>Train Number</th>
+                <th>Priority</th>
                 <th>Arrival</th>
                 <th>Departure</th>
-                <th>Flow Type</th>
+                <th>Type</th>
                 <th></th>
             </tr>
         </thead>
@@ -43,7 +46,7 @@
     </div>
 
     <div id="result-box" class="result-box">
-        <h2>Total Platforms Needed: <span id="total-pf">0</span></h2>
+        <h2>Total Platforms Required: <span id="total-pf">0</span></h2>
         <div id="schedule-list"></div>
     </div>
 </div>
@@ -55,17 +58,24 @@
         const tbody = document.querySelector("#inputTable tbody");
         const row = document.createElement("tr");
         row.innerHTML = `
-            <td><input type="text" class="name" placeholder="Vande Bharat"></td>
+            <td><input type="text" class="trainNo" placeholder="e.g. 12002"></td>
+            <td>
+                <select class="priority">
+                    <option value="10">High (Express)</option>
+                    <option value="5">Medium (Superfast)</option>
+                    <option value="1" selected>Standard (Passenger)</option>
+                </select>
+            </td>
             <td><input type="datetime-local" class="arr"></td>
             <td><input type="datetime-local" class="dep"></td>
             <td>
                 <select class="type">
                     <option value="U">Upstream</option>
                     <option value="D">Downstream</option>
-                    <option value="R">Reversal (Point 6)</option>
+                    <option value="R">Reversal</option>
                 </select>
             </td>
-            <td><button onclick="this.parentElement.parentElement.remove()">❌</button></td>
+            <td><button onclick="this.parentElement.parentElement.remove()" style="background:none; color:red; font-size:18px;">✖</button></td>
         `;
         tbody.appendChild(row);
     }
@@ -73,11 +83,14 @@
     async function processData() {
         const rows = document.querySelectorAll("tbody tr");
         const trains = Array.from(rows).map(r => ({
-            name: r.querySelector(".name").value || "Express",
+            trainNo: r.querySelector(".trainNo").value || "N/A",
+            priority: parseInt(r.querySelector(".priority").value),
             arrival: r.querySelector(".arr").value,
             departure: r.querySelector(".dep").value,
             type: r.querySelector(".type").value
         })).filter(t => t.arrival && t.departure);
+
+        if (trains.length === 0) return alert("Please fill arrival/departure times.");
 
         try {
             const res = await fetch('http://localhost:3000/calculate', {
@@ -95,10 +108,12 @@
         document.getElementById("total-pf").innerText = res.total;
         const list = document.getElementById("schedule-list");
         list.innerHTML = res.schedule.map(t => `
-            <div class="train-card">
+            <div class="train-card ${t.priority >= 10 ? 'priority-high' : ''}">
                 <div>
-                    <strong>${t.name}</strong> (${t.type === 'R' ? 'Reversal' : 'Through'})<br>
-                    <small>${new Date(t.arrival).toLocaleTimeString()} - ${new Date(t.departure).toLocaleTimeString()}</small>
+                    <strong>Train No: ${t.trainNo}</strong> 
+                    <small style="color: #64748b;">(${t.type === 'R' ? 'Reversal' : 'Through'})</small><br>
+                    <span style="font-size:12px;">Arr: ${new Date(t.arrival).toLocaleString()}</span><br>
+                    <span style="font-size:12px;">Dep: ${new Date(t.departure).toLocaleString()}</span>
                 </div>
                 <div><span class="pf-badge">Platform ${t.platform}</span></div>
             </div>
@@ -107,5 +122,3 @@
 </script>
 </body>
 </html>
-
-
