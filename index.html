@@ -107,16 +107,7 @@
 </div>
 
 <script>
-    function addRow() {
-        const row = `<tr class="train-row">
-            <td><input type="text" class="t-no"></td>
-            <td><select class="t-dir"><option value="Up">Upstream</option><option value="Down">Downstream</option></select></td>
-            <td><input type="datetime-local" class="t-arr"></td>
-            <td><input type="datetime-local" class="t-dep"></td>
-            <td><button class="delete-btn" onclick="this.parentElement.parentElement.remove()">❌</button></td>
-        </tr>`;
-        document.getElementById('train-table-body').insertAdjacentHTML('beforeend', row);
-    }
+    <!-- Inside your <script> tag -->
 
     async function calculate() {
         const rows = document.querySelectorAll('.train-row');
@@ -127,26 +118,42 @@
             departure: r.querySelector('.t-dep').value
         }));
 
-        const res = await fetch('http://localhost:3000/calculate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ trains })
-        });
+        try {
+            const response = await fetch('http://localhost:3000/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ trains })
+            });
 
-        const data = await res.json();
-        if (data.success) renderResults(data.results);
+            if (!response.ok) throw new Error("Server error: " + response.status);
+
+            // FIX: You must await the JSON parsing!
+            const data = await response.json(); 
+            
+            if (data.success && data.results) {
+                renderResults(data.results);
+            } else {
+                alert("Calculation failed: " + (data.error || "Unknown error"));
+            }
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            alert("Could not connect to server. Make sure Node is running.");
+        }
     }
 
     function renderResults(res) {
         const box = document.getElementById('result-box');
+        // Summary bar
         let html = `
             <div class="summary-stats">
-                <div><h4>Upstream</h4><p>${res.upstreamCount}</p></div>
-                <div><h4>Downstream</h4><p>${res.downstreamCount}</p></div>
-                <div><h4>Total</h4><p>${res.totalPlatforms}</p></div>
+                <div class="summary-item"><h4>Upstream</h4><p>${res.upstreamCount}</p></div>
+                <div class="summary-item"><h4>Downstream</h4><p>${res.downstreamCount}</p></div>
+                <div class="summary-item"><h4>Total</h4><p>${res.totalPlatforms}</p></div>
             </div>
+            <h3 style="margin: 20px 0 10px;">Platform Assignments</h3>
             <div class="results-container">`;
         
+        // Individual Platform Cards
         res.assignments.forEach(a => {
             html += `
                 <div class="platform-card">
@@ -154,8 +161,12 @@
                     <span class="train-tag">Train ${a.trainNo}</span>
                 </div>`;
         });
+        
         box.innerHTML = html + `</div>`;
     }
+
+
 </script>
 </body>
 </html>
+
