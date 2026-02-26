@@ -1,68 +1,53 @@
-// logic.js
+/**
+ * @param {Object} schedule - Array of train objects with { arrival, departure, trainNo }
+ * arrival/departure should be valid ISO date strings or Date objects.
+ */
+function getMinPlatformsWithDates(schedule) {
+    if (schedule.length === 0) return { count: 0, assignments: [] };
 
-function getMinPlatforms(schedule) {
-    if (schedule.length === 0) return 0;
+    // 1. Map to Date objects and sort by arrival time
+    let trains = schedule.map(train => ({
+        ...train,
+        arrDate: new Date(train.arrival),
+        depDate: new Date(train.departure)
+    }));
 
-    let arr = [];
-    let dep = [];
+    // Numerical sort based on milliseconds since epoch
+    trains.sort((a, b) => a.arrDate - b.arrDate);
 
-    schedule.forEach(train => {
-        let a = parseInt(train.arrival);
-        let d = parseInt(train.departure);
+    let platforms = []; // Stores the departure Date of the last train on each platform
+    let assignments = [];
 
-        // FIX: If departure is smaller than arrival (e.g., Arr: 2350, Dep: 0030)
-        // Add 2400 to departure to treat it as "next day" time (e.g., 2430)
-        if (d < a) {
-            d += 2400;
+    trains.forEach(train => {
+        let assigned = false;
+
+        // 2. Check if any existing platform is free by comparing timestamps
+        for (let i = 0; i < platforms.length; i++) {
+            // If arrival is after (or equal to) the last departure on this platform
+            if (train.arrDate.getTime() >= platforms[i].getTime()) {
+                platforms[i] = train.depDate;
+                assignments.push({ 
+                    trainNo: train.trainNo, 
+                    platformNo: i + 1,
+                    arrival: train.arrival,
+                    departure: train.departure 
+                });
+                assigned = true;
+                break;
+            }
         }
 
-        arr.push(a);
-        dep.push(d);
-    });
-
-    // Numerical sort is required in JS
-    arr.sort((a, b) => a - b);
-    dep.sort((a, b) => a - b);
-
-    let platforms_needed = 0;
-    let max_platforms = 0;
-    let i = 0; 
-    let j = 0; 
-
-    while (i < arr.length && j < dep.length) {
-        if (arr[i] <= dep[j]) {
-            platforms_needed++;
-            i++;
-        } else {
-            platforms_needed--;
-            j++;
-        }
-        max_platforms = Math.max(max_platforms, platforms_needed);
-    }
-    return max_platforms;
-}
-
-function calculateStationRequirements(trainList) {
-    let upstreamTrains = [];
-    let downstreamTrains = [];
-
-    trainList.forEach(train => {
-        const dir = train.direction.toLowerCase();
-        if (dir.startsWith('u')) {
-            upstreamTrains.push(train);
-        } else {
-            downstreamTrains.push(train);
+        // 3. If no platform is free, add a new one
+        if (!assigned) {
+            platforms.push(train.depDate);
+            assignments.push({ 
+                trainNo: train.trainNo, 
+                platformNo: platforms.length,
+                arrival: train.arrival,
+                departure: train.departure 
+            });
         }
     });
 
-    const upPlatforms = getMinPlatforms(upstreamTrains);
-    const downPlatforms = getMinPlatforms(downstreamTrains);
-
-    return {
-        upstream: upPlatforms,
-        downstream: downPlatforms,
-        total: upPlatforms + downPlatforms
-    };
+    return { count: platforms.length, assignments };
 }
-
-module.exports = { calculateStationRequirements };
