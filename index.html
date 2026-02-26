@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>StationMaster Pro | Long Train Edition</title>
+    <title>StationMaster Pro | 6-Coach Edition</title>
     <style>
         :root {
             --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --primary: #3b82f6;
@@ -16,37 +16,40 @@
         .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         #theme-toggle { cursor: pointer; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: bold; }
 
-        /* --- LONG REALISTIC TRAIN --- */
-        #loading-zone { display: none; margin: 50px 0; }
+        /* --- THE LONG TRAIN --- */
+        #loading-zone { display: none; margin: 60px 0; }
         #track { 
             height: 12px; border-top: 4px solid var(--track-color); border-bottom: 4px solid var(--track-color); 
             position: relative; background: repeating-linear-gradient(90deg, transparent, transparent 20px, var(--track-color) 20px, var(--track-color) 25px);
         }
         .realistic-train {
-            position: absolute; bottom: 12px; left: -700px; width: 650px; height: 80px;
-            display: flex; align-items: flex-end; animation: drive-heavy 3.5s linear infinite;
+            position: absolute; bottom: 12px; left: -900px; 
+            width: 850px; /* Wide enough for 6 coaches + 1 engine */
+            height: 80px;
+            display: flex; flex-wrap: nowrap; align-items: flex-end; 
+            animation: drive-heavy 4s linear infinite;
             filter: drop-shadow(0 10px 5px rgba(0,0,0,0.3));
         }
         .coach {
-            width: 80px; height: 45px; background: var(--primary); margin-right: 4px;
+            width: 85px; height: 45px; background: var(--primary); margin-right: 4px;
             border-radius: 4px; border-bottom: 6px solid #1d4ed8; position: relative; flex-shrink: 0;
         }
         .coach::after { content: '••••'; color: white; position: absolute; top: 10px; left: 15px; font-size: 20px; letter-spacing: 2px; }
         
         .engine {
-            width: 100px; height: 55px; background: #1e293b; border-radius: 4px 35px 4px 4px;
+            width: 110px; height: 55px; background: #1e293b; border-radius: 4px 40px 4px 4px;
             position: relative; border: 2px solid #334155; flex-shrink: 0;
         }
-        .engine::before { content: ''; position: absolute; top: 8px; right: 15px; width: 35px; height: 20px; background: #60a5fa; border-radius: 4px; }
+        .engine::before { content: ''; position: absolute; top: 8px; right: 15px; width: 40px; height: 20px; background: #60a5fa; border-radius: 4px; }
         
         .steam {
             position: absolute; top: -15px; right: 25px; width: 15px; height: 15px; background: rgba(255,255,255,0.6);
             border-radius: 50%; animation: puff 0.8s infinite;
         }
         @keyframes puff { 0% { transform: translateY(0) scale(1); opacity: 0.6; } 100% { transform: translateY(-30px) scale(2); opacity: 0; } }
-        @keyframes drive-heavy { 0% { left: -700px; } 100% { left: 110%; } }
+        @keyframes drive-heavy { 0% { left: -900px; } 100% { left: 110%; } }
 
-        /* General Styling */
+        /* Table & Cards */
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th { text-align: left; padding: 12px; border-bottom: 2px solid var(--border); color: var(--primary); }
         td { padding: 10px; border-bottom: 1px solid var(--border); }
@@ -56,7 +59,7 @@
         .add-btn { background: var(--accent); }
         .calc-btn { background: var(--primary); }
         .results-area { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
-        .res-card { padding: 15px; background: var(--bg); border-radius: 12px; border-top: 5px solid var(--primary); position: relative; }
+        .res-card { padding: 15px; background: var(--bg); border-radius: 12px; border-top: 5px solid var(--primary); position: relative; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .priority-10 { border-top-color: #ef4444; }
     </style>
 </head>
@@ -88,7 +91,7 @@
     </div>
 
     <div id="loading-zone">
-        <p style="text-align: center; font-weight: bold; color: var(--primary);">Analyzing Traffic & Allocating Platforms...</p>
+        <p style="text-align: center; font-weight: bold; color: var(--primary);">Allocating Platforms for Long-Haul Traffic...</p>
         <div id="track">
             <div class="realistic-train">
                 <div class="coach"></div>
@@ -113,7 +116,7 @@
         const tbody = document.querySelector("#trainTable tbody");
         const row = document.createElement("tr");
         row.innerHTML = `
-            <td><input type="text" class="tNo" placeholder="e.g. 12002"></td>
+            <td><input type="text" class="tNo" placeholder="12431"></td>
             <td>
                 <select class="prio">
                     <option value="10">High (Express)</option>
@@ -145,7 +148,7 @@
             type: r.querySelector(".type").value
         })).filter(t => t.arrival && t.departure);
 
-        if (trains.length === 0) return alert("Please fill arrival/departure times.");
+        if (trains.length === 0) return alert("Please enter train data.");
 
         document.getElementById("loading-zone").style.display = "block";
         document.getElementById("results").innerHTML = "";
@@ -158,10 +161,12 @@
                 body: JSON.stringify({ trains })
             });
             const data = await res.json();
+            
+            // Allow 4 seconds for the long train to pass
             setTimeout(() => {
                 document.getElementById("loading-zone").style.display = "none";
                 showResults(data.results);
-            }, 3000); // 3 seconds to let the long train pass
+            }, 4000);
         } catch (e) { 
             document.getElementById("loading-zone").style.display = "none";
             alert("Ensure server.js is running!"); 
