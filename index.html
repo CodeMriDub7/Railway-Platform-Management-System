@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>StationMaster Pro | Realistic Operations</title>
+    <title>StationMaster Pro | Final Edition</title>
     <style>
         :root {
             --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --primary: #3b82f6;
@@ -14,57 +14,47 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; padding: 20px; overflow-x: hidden; }
         .container { max-width: 1100px; margin: 0 auto; background: var(--card); padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        
         #theme-toggle { cursor: pointer; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: bold; }
 
-        /* --- BIG REALISTIC TRAIN SECTION --- */
+        /* --- REALISTIC TRAIN ANIMATION (LEADING ENGINE) --- */
         #loading-zone { display: none; margin: 40px 0; }
-        
         #track { 
-            height: 12px; border-top: 4px solid var(--track-color); 
-            border-bottom: 4px solid var(--track-color); 
+            height: 12px; border-top: 4px solid var(--track-color); border-bottom: 4px solid var(--track-color); 
             position: relative; background: repeating-linear-gradient(90deg, transparent, transparent 20px, var(--track-color) 20px, var(--track-color) 25px);
         }
-
         .realistic-train {
-            position: absolute; bottom: 12px; left: -300px;
-            width: 250px; height: 60px;
-            display: flex; align-items: flex-end;
-            animation: drive-heavy 2.5s ease-in-out infinite;
+            position: absolute; bottom: 12px; left: -400px; width: 350px; height: 80px;
+            display: flex; align-items: flex-end; animation: drive-heavy 2.8s ease-in-out infinite;
+            filter: drop-shadow(0 10px 5px rgba(0,0,0,0.3));
         }
-
-        /* Locomotive Shape */
+        .coach {
+            width: 80px; height: 45px; background: var(--primary); margin-right: 5px;
+            border-radius: 5px; border-bottom: 6px solid #1d4ed8; position: relative;
+        }
+        .coach::after { content: '••••'; color: white; position: absolute; top: 12px; left: 15px; font-size: 22px; letter-spacing: 3px; }
         .engine {
-            width: 80px; height: 50px; background: #1e293b; border-radius: 10px 20px 5px 5px;
+            width: 95px; height: 55px; background: #1e293b; border-radius: 5px 30px 5px 5px;
             position: relative; border: 2px solid #334155;
         }
-        .engine::before { content: ''; position: absolute; top: 5px; left: 10px; width: 25px; height: 15px; background: #60a5fa; border-radius: 3px; } /* Window */
-        
-        /* Train Cars */
-        .coach {
-            width: 70px; height: 40px; background: var(--primary); margin-left: 5px;
-            border-radius: 5px; border-bottom: 5px solid #1d4ed8; position: relative;
+        .engine::before { content: ''; position: absolute; top: 8px; right: 12px; width: 30px; height: 18px; background: #60a5fa; border-radius: 3px; }
+        .steam {
+            position: absolute; top: -15px; right: 20px; width: 15px; height: 15px; background: rgba(255,255,255,0.6);
+            border-radius: 50%; animation: puff 0.8s infinite;
         }
-        .coach::after { content: '••••'; color: white; position: absolute; top: 10px; left: 10px; font-size: 20px; letter-spacing: 2px; }
+        @keyframes puff { 0% { transform: translateY(0) scale(1); opacity: 0.6; } 100% { transform: translateY(-30px) scale(2); opacity: 0; } }
+        @keyframes drive-heavy { 0% { left: -400px; } 100% { left: 110%; } }
 
-        @keyframes drive-heavy {
-            0% { left: -300px; }
-            100% { left: 110%; }
-        }
-        /* --- END TRAIN SECTION --- */
-
+        /* Tables & Inputs */
         table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 12px; border-bottom: 2px solid var(--border); font-size: 13px; color: var(--primary); }
+        th { text-align: left; padding: 12px; border-bottom: 2px solid var(--border); color: var(--primary); }
         td { padding: 12px; border-bottom: 1px solid var(--border); }
-        input, select { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); width: 90%; }
-
+        input, select { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); width: 95%; }
         .controls { display: flex; gap: 15px; margin-top: 25px; }
-        button.main { flex: 1; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; color: white; transition: 0.3s; }
+        button.main { flex: 1; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; color: white; }
         .add-btn { background: var(--accent); }
         .calc-btn { background: var(--primary); }
-        
         .results-area { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
-        .res-card { padding: 15px; background: var(--bg); border-radius: 12px; border-top: 5px solid var(--primary); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .res-card { padding: 15px; background: var(--bg); border-radius: 12px; border-top: 5px solid var(--primary); }
         .priority-10 { border-top-color: #ef4444; }
     </style>
 </head>
@@ -96,12 +86,12 @@
     </div>
 
     <div id="loading-zone">
-        <p style="text-align: center; font-weight: bold; color: var(--primary);">Dispatching Trains to Platforms...</p>
+        <p style="text-align: center; font-weight: bold; color: var(--primary);">Calculating Platform Requirements...</p>
         <div id="track">
             <div class="realistic-train">
-                <div class="engine"></div>
                 <div class="coach"></div>
                 <div class="coach"></div>
+                <div class="engine"><div class="steam"></div></div>
             </div>
         </div>
     </div>
@@ -149,9 +139,8 @@
             type: r.querySelector(".type").value
         })).filter(t => t.arrival && t.departure);
 
-        if (trains.length === 0) return alert("Please enter valid train data.");
+        if (trains.length === 0) return alert("Please fill in train data.");
 
-        // Show Animation
         document.getElementById("loading-zone").style.display = "block";
         document.getElementById("results").innerHTML = "";
         document.getElementById("total-text").style.display = "none";
@@ -163,16 +152,13 @@
                 body: JSON.stringify({ trains })
             });
             const data = await res.json();
-
-            // Longer delay so you can see the big train cross the screen
             setTimeout(() => {
                 document.getElementById("loading-zone").style.display = "none";
                 showResults(data.results);
             }, 2500);
-
         } catch (e) { 
             document.getElementById("loading-zone").style.display = "none";
-            alert("Connection error! Ensure server.js is running."); 
+            alert("Error: Ensure server.js is running!"); 
         }
     }
 
@@ -183,11 +169,10 @@
         area.innerHTML = data.schedule.map(t => `
             <div class="res-card ${t.priority == 10 ? 'priority-10' : ''}">
                 <div style="float:right; background:var(--primary); color:white; padding:2px 8px; border-radius:5px; font-size:12px;">PF ${t.platform}</div>
-                <strong>Train #${t.trainNo}</strong><br>
+                <strong>#${t.trainNo}</strong><br>
                 <small>${t.type === 'R' ? '🔄 Reversal' : '🛤️ Through'}</small><br>
-                <div style="font-size:11px; margin-top:10px; opacity:0.8;">
-                    ${new Date(t.arrival).toLocaleString([], {hour: '2-digit', minute:'2-digit'})} - 
-                    ${new Date(t.departure).toLocaleString([], {hour: '2-digit', minute:'2-digit'})}
+                <div style="font-size:11px; margin-top:10px;">
+                    ${new Date(t.arrival).toLocaleTimeString()} - ${new Date(t.departure).toLocaleTimeString()}
                 </div>
             </div>
         `).join('');
