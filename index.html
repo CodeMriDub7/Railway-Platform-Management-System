@@ -2,147 +2,118 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StationMaster Pro | Next-Gen Platform Logic</title>
+    <title>StationMaster Pro | Premium UX</title>
     <style>
         :root {
-            --primary: #3b82f6; --bg: #f1f5f9; --card: #ffffff; --text: #1e293b;
+            --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --primary: #3b82f6;
             --accent: #10b981; --border: #e2e8f0;
         }
         body.dark {
             --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --border: #334155;
         }
-        body {
-            font-family: 'Inter', system-ui, sans-serif; background: var(--bg);
-            color: var(--text); transition: 0.3s; margin: 0; padding: 20px;
-        }
-        .container {
-            max-width: 1100px; margin: 0 auto; background: var(--card);
-            padding: 40px; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-        }
-        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; padding: 20px; }
+        .container { max-width: 1100px; margin: 0 auto; background: var(--card); padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         
-        /* Dark Mode Toggle */
-        #theme-btn {
-            background: var(--primary); color: white; border: none; padding: 10px 20px;
-            border-radius: 50px; cursor: pointer; font-weight: 600;
-        }
+        #theme-toggle { cursor: pointer; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: bold; }
 
-        /* Moving Train Animation Container */
-        #loading-zone {
-            display: none; height: 60px; position: relative; overflow: hidden;
-            background: var(--bg); border-radius: 10px; margin: 20px 0;
-        }
-        .train-animation {
-            font-size: 40px; position: absolute; left: -100px; animation: moveTrain 2s linear infinite;
-        }
-        @keyframes moveTrain {
-            0% { left: -100px; }
-            100% { left: 100%; }
-        }
+        /* Animation Zone */
+        #track { display: none; height: 50px; border-bottom: 4px dashed #94a3b8; position: relative; margin: 20px 0; overflow: hidden; }
+        .train-sprite { position: absolute; font-size: 30px; animation: drive 2s linear infinite; }
+        @keyframes drive { from { left: -100px; } to { left: 100%; } }
 
-        table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
-        th { padding: 15px; text-align: left; font-size: 13px; opacity: 0.7; }
-        td { background: var(--bg); padding: 12px; border: 1px solid var(--border); }
-        td:first-child { border-radius: 10px 0 0 10px; }
-        td:last-child { border-radius: 0 10px 10px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; border-bottom: 2px solid var(--border); font-size: 13px; color: var(--primary); }
+        td { padding: 12px; border-bottom: 1px solid var(--border); }
+        input, select { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); width: 90%; }
 
-        input, select {
-            background: transparent; border: none; color: var(--text); outline: none; width: 100%;
-        }
-
-        .btn-row { display: flex; gap: 15px; margin-top: 20px; }
-        button { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; }
-        .add-btn { background: var(--accent); color: white; }
-        .calc-btn { background: var(--primary); color: white; }
-        button:hover { opacity: 0.9; transform: translateY(-2px); }
-
-        .result-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px; margin-top: 30px;
-        }
-        .card { background: var(--bg); padding: 20px; border-radius: 15px; border-left: 6px solid var(--primary); }
+        .controls { display: flex; gap: 15px; margin-top: 25px; }
+        button.main { flex: 1; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; color: white; transition: 0.3s; }
+        .add-btn { background: var(--accent); }
+        .calc-btn { background: var(--primary); }
+        
+        .results-area { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .res-card { padding: 15px; background: var(--bg); border-radius: 12px; border-top: 4px solid var(--primary); position: relative; }
+        .priority-10 { border-top-color: #ef4444; }
+        .pf-num { position: absolute; top: 10px; right: 10px; background: var(--primary); color: white; padding: 2px 8px; border-radius: 5px; font-size: 12px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header-flex">
-        <h1>🚄 StationMaster <span style="color: var(--primary)">Pro</span></h1>
-        <button id="theme-btn" onclick="toggleTheme()">🌓 Toggle Mode</button>
+    <div class="nav">
+        <h1>🚄 StationMaster <span style="color:var(--primary)">Pro</span></h1>
+        <button id="theme-toggle" onclick="document.body.classList.toggle('dark')">🌓 Switch Mode</button>
     </div>
 
     <table id="trainTable">
         <thead>
             <tr>
-                <th>Train Number</th>
+                <th>Train No.</th>
                 <th>Priority</th>
                 <th>Arrival</th>
                 <th>Departure</th>
                 <th>Flow</th>
-                <th>Action</th>
+                <th></th>
             </tr>
         </thead>
         <tbody></tbody>
     </table>
 
-    <div class="btn-row">
-        <button class="add-btn" onclick="addRow()">+ Add New Train</button>
-        <button class="calc-btn" onclick="processSchedule()">Process & Calculate</button>
+    <div class="controls">
+        <button class="main add-btn" onclick="addRow()">+ Add Train</button>
+        <button class="calc-btn main" onclick="calculate()">Process Schedule</button>
     </div>
 
-    <div id="loading-zone">
-        <div class="train-animation">🚂🚃🚃🚃</div>
-    </div>
+    <div id="track"><div class="train-sprite">🚂🚃🚃</div></div>
 
-    <div id="results" class="result-grid"></div>
+    <h2 id="total-text" style="margin-top:20px; display:none;">Total Platforms: <span id="pf-count">0</span></h2>
+    <div id="results" class="results-area"></div>
 </div>
 
 <script>
     window.onload = () => addRow();
 
-    function toggleTheme() { document.body.classList.toggle('dark'); }
-
     function addRow() {
         const tbody = document.querySelector("#trainTable tbody");
         const row = document.createElement("tr");
         row.innerHTML = `
-            <td><input type="text" class="trainNo" placeholder="12431"></td>
+            <td><input type="text" class="tNo" placeholder="12675"></td>
             <td>
-                <select class="priority">
-                    <option value="10">High</option>
-                    <option value="5">Medium</option>
-                    <option value="1" selected>Standard</option>
+                <select class="prio">
+                    <option value="10">High (Express)</option>
+                    <option value="5">Medium (Superfast)</option>
+                    <option value="1" selected>Standard (Local)</option>
                 </select>
             </td>
             <td><input type="datetime-local" class="arr"></td>
             <td><input type="datetime-local" class="dep"></td>
             <td>
                 <select class="type">
-                    <option value="U">Up</option>
-                    <option value="D">Down</option>
+                    <option value="U">Upstream</option>
+                    <option value="D">Downstream</option>
                     <option value="R">Reversal</option>
                 </select>
             </td>
-            <td><button onclick="this.parentElement.parentElement.remove()" style="background:none; color:red">✖</button></td>
+            <td><button onclick="this.parentElement.parentElement.remove()" style="background:none; border:none; color:red; cursor:pointer;">✖</button></td>
         `;
         tbody.appendChild(row);
     }
 
-    async function processSchedule() {
+    async function calculate() {
         const rows = document.querySelectorAll("tbody tr");
         const trains = Array.from(rows).map(r => ({
-            trainNo: r.querySelector(".trainNo").value,
-            priority: parseInt(r.querySelector(".priority").value),
+            trainNo: r.querySelector(".tNo").value || "Unknown",
+            priority: parseInt(r.querySelector(".prio").value),
             arrival: r.querySelector(".arr").value,
             departure: r.querySelector(".dep").value,
             type: r.querySelector(".type").value
         })).filter(t => t.arrival && t.departure);
 
-        if (trains.length === 0) return alert("Fill data first!");
+        if (trains.length === 0) return alert("Add some trains first!");
 
-        // 1. Show Moving Train
-        document.getElementById("loading-zone").style.display = "block";
+        // Start Animation
+        document.getElementById("track").style.display = "block";
         document.getElementById("results").innerHTML = "";
 
         try {
@@ -152,30 +123,30 @@
                 body: JSON.stringify({ trains })
             });
             const data = await res.json();
-            
-            // Artificial delay to enjoy the animation
+
+            // Simulate loading for the animation
             setTimeout(() => {
-                document.getElementById("loading-zone").style.display = "none";
-                render(data.results);
-            }, 1500);
-            
-        } catch (e) {
-            document.getElementById("loading-zone").style.display = "none";
-            alert("Server Error");
-        }
+                document.getElementById("track").style.display = "none";
+                showResults(data.results);
+            }, 1200);
+
+        } catch (e) { alert("Check if server is running!"); }
     }
 
-    function render(res) {
-        const grid = document.getElementById("results");
-        grid.innerHTML = `<h3>Total Platforms: ${res.total}</h3><br>`;
-        res.schedule.forEach(t => {
-            grid.innerHTML += `
-                <div class="card" style="border-left-color: ${t.priority >= 10 ? '#ef4444' : '#3b82f6'}">
-                    <strong>#${t.trainNo}</strong> <span style="float:right">PF ${t.platform}</span><br>
-                    <small>${new Date(t.arrival).toLocaleTimeString()} - ${new Date(t.departure).toLocaleTimeString()}</small>
+    function showResults(data) {
+        document.getElementById("total-text").style.display = "block";
+        document.getElementById("pf-count").innerText = data.total;
+        const area = document.getElementById("results");
+        area.innerHTML = data.schedule.map(t => `
+            <div class="res-card ${t.priority == 10 ? 'priority-10' : ''}">
+                <span class="pf-num">PF ${t.platform}</span>
+                <strong># ${t.trainNo}</strong><br>
+                <small>${t.type === 'R' ? '🔄 Reversal' : '🛤️ Through'}</small><br>
+                <div style="font-size:11px; margin-top:10px;">
+                    ${new Date(t.arrival).toLocaleTimeString()} - ${new Date(t.departure).toLocaleTimeString()}
                 </div>
-            `;
-        });
+            </div>
+        `).join('');
     }
 </script>
 </body>
