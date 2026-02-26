@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Platform Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root { 
+            --bg-color: #f8f9fa;
+            --text-color: #2c3e50;
+            --container-bg: #ffffff;
+            --shadow: rgba(0, 0, 0, 0.08);
+            --header-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary-color: #667eea;
+            --success-color: #48bb78;
+            --danger-color: #f56565;
+            --border-color: #e2e8f0;
+            --input-bg: #f7fafc;
+            --hover-bg: #edf2f7;
+        }
+
+        body.dark-mode {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --container-bg: #1e293b;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --header-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary-color: #667eea;
+            --success-color: #48bb78;
+            --danger-color: #f56565;
+            --border-color: #334155;
+            --input-bg: #0f172a;
+            --hover-bg: #334155;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Segoe UI', '-apple-system', 'BlinkMacSystemFont', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            min-height: 100vh;
+        }
+
+        .main-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 720px;
+        }
+
+        #theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            z-index: 1000;
+        }
+
+        #theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        #theme-toggle:active {
+            transform: translateY(0);
+        }
+
+        .container {
+            background: var(--container-bg);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px var(--shadow);
+            transition: all 0.4s ease;
+            margin-top: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 35px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        h2 {
+            color: var(--text-color);
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        h3 {
+            color: var(--text-color);
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        p {
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        /* Table Styles */
+        .table-wrapper {
+            margin-top: 25px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .train-list {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--container-bg);
+        }
+
+        .train-list thead {
+            background: var(--header-bg);
+            color: white;
+        }
+
+        .train-list th {
+            padding: 14px 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .train-list td {
+            padding: 12px 10px;
+            text-align: center;
+            color: var(--text-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .train-list tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .train-list tbody tr:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .train-list tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        input, select {
+            width: 95%;
+            padding: 8px 12px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 13px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background-color: var(--container-bg);
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        /* Delete Button */
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-btn:hover {
+            background-color: rgba(245, 101, 101, 0.1);
+            transform: scale(1.1);
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 11px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, var(--success-color) 0%, #38a169 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(72, 187, 120, 0.4);
+        }
+
+        .btn-calc {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .btn-calc:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, var(--danger-color) 0%, #e53e3e 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+        }
+
+        .btn-clear:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(245, 101, 101, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Results Box */
+        #result-box {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, var(--container-bg) 0%, var(--hover-bg) 100%);
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            display: none;
+            color: var(--text-color);
+            animation: slideIn 0.4s ease;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .res-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+            font-size: 15px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        .res-row span:last-child {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 16px;
+        }
+
+        .total {
+            border: none;
+            border-top: 2px solid var(--primary-color);
+            padding-top: 15px;
+            margin-top: 15px;
+            font-size: 16px !important;
+        }
+
+        .total span:first-child {
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .total span:last-child {
+            font-size: 24px !important;
+            color: var(--success-color);
+            font-weight: 700;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+
+            .btn-group {
+                gap: 8px;
+            }
+
+            button {
+                padding: 9px 16px;
+                font-size: 12px;
+            }
+
+            #theme-toggle {
+                padding: 8px 14px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<button id="theme-toggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+
+<div class="main-wrapper">
+    <div class="container">
+        <div class="header">
+            <h2>🚄 Railway Platform Calculator</h2>
+            <p class="subtitle">Enter train timings in HHMM format to calculate required platforms</p>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="train-list" id="trainTable">
+                <thead>
+                    <tr>
+                        <th>Arrival</th>
+                        <th>Departure</th>
+                        <th>Direction</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-add" onclick="addRow()">+ Add Train</button>
+            <button class="btn-calc" onclick="calculate()">Calculate Platforms</button>
+            <button class="btn-clear" onclick="clearData()">Reset</button>
+        </div>
+
+        <div id="result-box">
+            <h3>✓ Results</h3>
+            <div class="res-row"><span>Upstream Platforms:</span> <span id="up-res">0</span></div>
+            <div class="res-row"><span>Downstream Platforms:</span> <span id="down-res">0</span></div>
+            <div class="res-row total"><span>TOTAL REQUIRED:</span> <span id="total-res">0</span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Add a default row on load
+    window.onload = function() {
+        addRow();
+        initDarkMode();
+    };
+
+    function toggleDarkMode() {
+        document.body.classList.toggle("dark-mode");
+        const isDarkMode = document.body.classList.contains("dark-mode");
+        localStorage.setItem("darkMode", isDarkMode);
+        updateThemeButtonText();
+    }
+
+    function initDarkMode() {
+        const savedDarkMode = localStorage.getItem("darkMode") === "true";
+        if (savedDarkMode) {
+            document.body.classList.add("dark-mode");
+        }
+        updateThemeButtonText();
+    }
+
+    function updateThemeButtonText() {
+        const btn = document.getElementById("theme-toggle");
+        const isDarkMode = document.body.classList.contains("dark-mode");
+        btn.textContent = isDarkMode ? "☀️ Light Mode" : "🌙 Dark Mode";
+    }
+
+    function addRow() {
+        const table = document.getElementById("trainTable").getElementsByTagName('tbody')[0];
+        const newRow = table.insertRow();
+        newRow.innerHTML = `
+            <td><input type="number" placeholder="0900" class="arr"></td>
+            <td><input type="number" placeholder="0930" class="dep"></td>
+            <td>
+                <select class="dir">
+                    <option value="U">Up</option>
+                    <option value="D">Down</option>
+                </select>
+            </td>
+            <td><button class="delete-btn" onclick="this.parentElement.parentElement.remove()">✖</button></td>
+        `;
+    }
+
+    function clearData() {
+        document.querySelector("tbody").innerHTML = "";
+        document.getElementById("result-box").style.display = "none";
+        addRow();
+    }
+
+    async function calculate() {
+        // 1. Gather Data
+        const rows = document.querySelectorAll("tbody tr");
+        let trains = [];
+
+        rows.forEach(row => {
+            let arr = row.querySelector(".arr").value;
+            let dep = row.querySelector(".dep").value;
+            let dir = row.querySelector(".dir").value;
+
+            if (arr && dep) {
+                trains.push({ arrival: parseInt(arr), departure: parseInt(dep), direction: dir });
+            }
+        });
+
+        if(trains.length === 0) {
+            alert("Please add at least one train with timings!");
+            return;
+        }
+
+        // 2. Send to Backend
+        try {
+            const response = await fetch('http://localhost:3000/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ trains: trains })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // 3. Show Results
+                document.getElementById("up-res").innerText = data.results.upstream;
+                document.getElementById("down-res").innerText = data.results.downstream;
+                document.getElementById("total-res").innerText = data.results.total;
+                document.getElementById("result-box").style.display = "block";
+            } else {
+                alert("Error from server: " + data.error);
+            }
+
+        } catch (err) {
+            alert("Could not connect to server. Is Node.js running?");
+            console.error(err);
+        }
+    }
+</script>
+
+</body>
+</html>
