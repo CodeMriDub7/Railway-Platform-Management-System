@@ -2,25 +2,56 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>StationMaster Pro | Premium UX</title>
+    <title>StationMaster Pro | Realistic Operations</title>
     <style>
         :root {
             --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --primary: #3b82f6;
-            --accent: #10b981; --border: #e2e8f0;
+            --accent: #10b981; --border: #e2e8f0; --track-color: #475569;
         }
         body.dark {
-            --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --border: #334155;
+            --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --border: #334155; --track-color: #94a3b8;
         }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; padding: 20px; overflow-x: hidden; }
         .container { max-width: 1100px; margin: 0 auto; background: var(--card); padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         
         #theme-toggle { cursor: pointer; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: bold; }
 
-        /* Animation Zone */
-        #track { display: none; height: 50px; border-bottom: 4px dashed #94a3b8; position: relative; margin: 20px 0; overflow: hidden; }
-        .train-sprite { position: absolute; font-size: 30px; animation: drive 2s linear infinite; }
-        @keyframes drive { from { left: -100px; } to { left: 100%; } }
+        /* --- BIG REALISTIC TRAIN SECTION --- */
+        #loading-zone { display: none; margin: 40px 0; }
+        
+        #track { 
+            height: 12px; border-top: 4px solid var(--track-color); 
+            border-bottom: 4px solid var(--track-color); 
+            position: relative; background: repeating-linear-gradient(90deg, transparent, transparent 20px, var(--track-color) 20px, var(--track-color) 25px);
+        }
+
+        .realistic-train {
+            position: absolute; bottom: 12px; left: -300px;
+            width: 250px; height: 60px;
+            display: flex; align-items: flex-end;
+            animation: drive-heavy 2.5s ease-in-out infinite;
+        }
+
+        /* Locomotive Shape */
+        .engine {
+            width: 80px; height: 50px; background: #1e293b; border-radius: 10px 20px 5px 5px;
+            position: relative; border: 2px solid #334155;
+        }
+        .engine::before { content: ''; position: absolute; top: 5px; left: 10px; width: 25px; height: 15px; background: #60a5fa; border-radius: 3px; } /* Window */
+        
+        /* Train Cars */
+        .coach {
+            width: 70px; height: 40px; background: var(--primary); margin-left: 5px;
+            border-radius: 5px; border-bottom: 5px solid #1d4ed8; position: relative;
+        }
+        .coach::after { content: '••••'; color: white; position: absolute; top: 10px; left: 10px; font-size: 20px; letter-spacing: 2px; }
+
+        @keyframes drive-heavy {
+            0% { left: -300px; }
+            100% { left: 110%; }
+        }
+        /* --- END TRAIN SECTION --- */
 
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 12px; border-bottom: 2px solid var(--border); font-size: 13px; color: var(--primary); }
@@ -32,10 +63,9 @@
         .add-btn { background: var(--accent); }
         .calc-btn { background: var(--primary); }
         
-        .results-area { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-        .res-card { padding: 15px; background: var(--bg); border-radius: 12px; border-top: 4px solid var(--primary); position: relative; }
+        .results-area { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+        .res-card { padding: 15px; background: var(--bg); border-radius: 12px; border-top: 5px solid var(--primary); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .priority-10 { border-top-color: #ef4444; }
-        .pf-num { position: absolute; top: 10px; right: 10px; background: var(--primary); color: white; padding: 2px 8px; border-radius: 5px; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -61,13 +91,22 @@
     </table>
 
     <div class="controls">
-        <button class="main add-btn" onclick="addRow()">+ Add Train</button>
-        <button class="calc-btn main" onclick="calculate()">Process Schedule</button>
+        <button class="main add-btn" onclick="addRow()">+ Add New Train</button>
+        <button class="calc-btn main" onclick="calculate()">Process & Dispatch</button>
     </div>
 
-    <div id="track"><div class="train-sprite">🚂🚃🚃</div></div>
+    <div id="loading-zone">
+        <p style="text-align: center; font-weight: bold; color: var(--primary);">Dispatching Trains to Platforms...</p>
+        <div id="track">
+            <div class="realistic-train">
+                <div class="engine"></div>
+                <div class="coach"></div>
+                <div class="coach"></div>
+            </div>
+        </div>
+    </div>
 
-    <h2 id="total-text" style="margin-top:20px; display:none;">Total Platforms: <span id="pf-count">0</span></h2>
+    <h2 id="total-text" style="margin-top:20px; display:none;">Total Platforms Required: <span id="pf-count">0</span></h2>
     <div id="results" class="results-area"></div>
 </div>
 
@@ -103,18 +142,19 @@
     async function calculate() {
         const rows = document.querySelectorAll("tbody tr");
         const trains = Array.from(rows).map(r => ({
-            trainNo: r.querySelector(".tNo").value || "Unknown",
+            trainNo: r.querySelector(".tNo").value || "N/A",
             priority: parseInt(r.querySelector(".prio").value),
             arrival: r.querySelector(".arr").value,
             departure: r.querySelector(".dep").value,
             type: r.querySelector(".type").value
         })).filter(t => t.arrival && t.departure);
 
-        if (trains.length === 0) return alert("Add some trains first!");
+        if (trains.length === 0) return alert("Please enter valid train data.");
 
-        // Start Animation
-        document.getElementById("track").style.display = "block";
+        // Show Animation
+        document.getElementById("loading-zone").style.display = "block";
         document.getElementById("results").innerHTML = "";
+        document.getElementById("total-text").style.display = "none";
 
         try {
             const res = await fetch('http://localhost:3000/calculate', {
@@ -124,13 +164,16 @@
             });
             const data = await res.json();
 
-            // Simulate loading for the animation
+            // Longer delay so you can see the big train cross the screen
             setTimeout(() => {
-                document.getElementById("track").style.display = "none";
+                document.getElementById("loading-zone").style.display = "none";
                 showResults(data.results);
-            }, 1200);
+            }, 2500);
 
-        } catch (e) { alert("Check if server is running!"); }
+        } catch (e) { 
+            document.getElementById("loading-zone").style.display = "none";
+            alert("Connection error! Ensure server.js is running."); 
+        }
     }
 
     function showResults(data) {
@@ -139,11 +182,12 @@
         const area = document.getElementById("results");
         area.innerHTML = data.schedule.map(t => `
             <div class="res-card ${t.priority == 10 ? 'priority-10' : ''}">
-                <span class="pf-num">PF ${t.platform}</span>
-                <strong># ${t.trainNo}</strong><br>
+                <div style="float:right; background:var(--primary); color:white; padding:2px 8px; border-radius:5px; font-size:12px;">PF ${t.platform}</div>
+                <strong>Train #${t.trainNo}</strong><br>
                 <small>${t.type === 'R' ? '🔄 Reversal' : '🛤️ Through'}</small><br>
-                <div style="font-size:11px; margin-top:10px;">
-                    ${new Date(t.arrival).toLocaleTimeString()} - ${new Date(t.departure).toLocaleTimeString()}
+                <div style="font-size:11px; margin-top:10px; opacity:0.8;">
+                    ${new Date(t.arrival).toLocaleString([], {hour: '2-digit', minute:'2-digit'})} - 
+                    ${new Date(t.departure).toLocaleString([], {hour: '2-digit', minute:'2-digit'})}
                 </div>
             </div>
         `).join('');
