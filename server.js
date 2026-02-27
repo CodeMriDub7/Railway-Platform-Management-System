@@ -4,23 +4,14 @@ const cors = require('cors');
 const { calculateStationRequirements } = require('./logic');
 
 const app = express();
-const PORT = 3000;
-
-app.use(cors({ origin: '*' }));
+app.use(cors());
 app.use(express.json());
 
 app.post('/calculate', (req, res) => {
     try {
-        const { trains } = req.body;
-        if (!trains) return res.status(400).json({ success: false, error: "No data" });
-
-        const results = calculateStationRequirements(trains);
+        const results = calculateStationRequirements(req.body.trains);
         res.json({ success: true, results });
-    } catch (error) {
-        res.status(500).json({ success: false, error: "Calculation Error" });
-    }
+    } catch (e) { res.status(500).send(e.message); }
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 StationMaster Server running on http://localhost:${PORT}`);
-});
+app.listen(3000, () => console.log("🚀 Server running on Port 3000"));
