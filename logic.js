@@ -1,21 +1,20 @@
 // logic.js
-
 function calculateStationRequirements(trainList) {
     const BUFFER = 10 * 60000; 
     const REVERSAL_BUFFER = 25 * 60000;
-    const MAX_STAY = 60 * 60000;
+    const TERMINATING_STAY = 45 * 60000; // Updated to 45 minutes as requested
 
     const valid = trainList.filter(t => {
         const a = new Date(t.arrival).getTime();
-        const d = new Date(t.departure).getTime();
-        return a !== d;
+        return !isNaN(a);
     });
 
-    const processed = valid.map(t => ({
-        ...t,
-        arr: new Date(t.arrival).getTime(),
-        dep: new Date(t.departure).getTime()
-    })).sort((a, b) => {
+    const processed = valid.map(t => {
+        const arr = new Date(t.arrival).getTime();
+        // Use 45-min stay for terminating trains, otherwise use departure input
+        const dep = t.isLastStop ? (arr + TERMINATING_STAY) : new Date(t.departure).getTime();
+        return { ...t, arr, dep };
+    }).sort((a, b) => {
         if (a.arr !== b.arr) return a.arr - b.arr;
         return b.priority - a.priority; 
     });
@@ -25,31 +24,25 @@ function calculateStationRequirements(trainList) {
 
     processed.forEach(train => {
         const currentBuffer = train.type === 'R' ? REVERSAL_BUFFER : BUFFER;
-        const platformRelease = (train.dep - train.arr) > MAX_STAY ? (train.arr + MAX_STAY) : train.dep;
-
         let pIdx = platforms.findIndex(freeAt => (freeAt + currentBuffer) <= train.arr);
 
         if (pIdx === -1) {
-            platforms.push(platformRelease);
+            platforms.push(train.dep);
             pIdx = platforms.length - 1;
         } else {
-            platforms[pIdx] = platformRelease;
+            platforms[pIdx] = train.dep;
         }
 
         schedule.push({
-            trainNo: train.trainNo,
+            ...train,
             platform: pIdx + 1,
-            arrival: train.arrival,
-            departure: train.departure,
-            type: train.type,
-            priority: train.priority
+            displayDep: train.isLastStop 
+                ? `${new Date(train.dep).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} (Yard)` 
+                : new Date(train.dep).toLocaleString()
         });
     });
 
-    return {
-        total: platforms.length,
-        schedule: schedule
-    };
+    return { total: platforms.length, schedule: schedule };
 }
 
 module.exports = { calculateStationRequirements };
