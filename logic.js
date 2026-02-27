@@ -2,7 +2,7 @@
 function calculateStationRequirements(trainList) {
     const BUFFER = 10 * 60000; 
     const REVERSAL_BUFFER = 25 * 60000;
-    const TERMINATING_STAY = 120 * 60000; // 2 hours stay for last stop trains
+    const TERMINATING_STAY = 45 * 60000; // Updated to 45 minutes as requested
 
     const valid = trainList.filter(t => {
         const a = new Date(t.arrival).getTime();
@@ -11,9 +11,8 @@ function calculateStationRequirements(trainList) {
 
     const processed = valid.map(t => {
         const arr = new Date(t.arrival).getTime();
-        // If it's the last stop, the "departure" is effectively arrival + 2 hours
+        // Use 45-min stay for terminating trains, otherwise use departure input
         const dep = t.isLastStop ? (arr + TERMINATING_STAY) : new Date(t.departure).getTime();
-        
         return { ...t, arr, dep };
     }).sort((a, b) => {
         if (a.arr !== b.arr) return a.arr - b.arr;
@@ -25,8 +24,6 @@ function calculateStationRequirements(trainList) {
 
     processed.forEach(train => {
         const currentBuffer = train.type === 'R' ? REVERSAL_BUFFER : BUFFER;
-        
-        // Find platform
         let pIdx = platforms.findIndex(freeAt => (freeAt + currentBuffer) <= train.arr);
 
         if (pIdx === -1) {
@@ -39,7 +36,9 @@ function calculateStationRequirements(trainList) {
         schedule.push({
             ...train,
             platform: pIdx + 1,
-            displayDep: train.isLastStop ? "Terminates (Yard at +2h)" : new Date(train.dep).toLocaleString()
+            displayDep: train.isLastStop 
+                ? `${new Date(train.dep).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} (Yard)` 
+                : new Date(train.dep).toLocaleString()
         });
     });
 
