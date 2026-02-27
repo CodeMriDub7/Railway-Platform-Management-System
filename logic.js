@@ -2,21 +2,20 @@
 function calculateStationRequirements(trainList) {
     const BUFFER = 10 * 60000; 
     const REVERSAL_BUFFER = 25 * 60000;
-    const MAX_STAY = 60 * 60000;
+    const TERMINATING_STAY = 120 * 60000; // 2 hours stay for last stop trains
 
-    // 1. Filter out invalid rows
     const valid = trainList.filter(t => {
         const a = new Date(t.arrival).getTime();
-        const d = new Date(t.departure).getTime();
-        return a !== d && !isNaN(a) && !isNaN(d);
+        return !isNaN(a);
     });
 
-    // 2. Sort by Time, then by Priority (High numbers first)
-    const processed = valid.map(t => ({
-        ...t,
-        arr: new Date(t.arrival).getTime(),
-        dep: new Date(t.departure).getTime()
-    })).sort((a, b) => {
+    const processed = valid.map(t => {
+        const arr = new Date(t.arrival).getTime();
+        // If it's the last stop, the "departure" is effectively arrival + 2 hours
+        const dep = t.isLastStop ? (arr + TERMINATING_STAY) : new Date(t.departure).getTime();
+        
+        return { ...t, arr, dep };
+    }).sort((a, b) => {
         if (a.arr !== b.arr) return a.arr - b.arr;
         return b.priority - a.priority; 
     });
@@ -26,33 +25,25 @@ function calculateStationRequirements(trainList) {
 
     processed.forEach(train => {
         const currentBuffer = train.type === 'R' ? REVERSAL_BUFFER : BUFFER;
-        const platformRelease = (train.dep - train.arr) > MAX_STAY ? (train.arr + MAX_STAY) : train.dep;
-
-        // Find reusable platform
+        
+        // Find platform
         let pIdx = platforms.findIndex(freeAt => (freeAt + currentBuffer) <= train.arr);
 
         if (pIdx === -1) {
-            platforms.push(platformRelease);
+            platforms.push(train.dep);
             pIdx = platforms.length - 1;
         } else {
-            platforms[pIdx] = platformRelease;
+            platforms[pIdx] = train.dep;
         }
 
         schedule.push({
-            trainNo: train.trainNo,
+            ...train,
             platform: pIdx + 1,
-            arrival: train.arrival,
-            departure: train.departure,
-            type: train.type,
-            priority: train.priority,
-            movedToYard: (train.dep - train.arr) > MAX_STAY
+            displayDep: train.isLastStop ? "Terminates (Yard at +2h)" : new Date(train.dep).toLocaleString()
         });
     });
 
-    return {
-        total: platforms.length,
-        schedule: schedule
-    };
+    return { total: platforms.length, schedule: schedule };
 }
 
 module.exports = { calculateStationRequirements };
