@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>StationMaster Pro | Minimalist Edition</title>
+    <title>Railway Platform Management System</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -17,7 +17,7 @@
             
             /* Scenery Colors */
             --sky: #f0f9ff;
-            --river: #e0f2fe;
+            --river: #27a4f79d;
             --structure: #cbd5e1;
             --cloud: #ffffff;
 
@@ -31,7 +31,7 @@
         /* dark mode overrides */
         [data-theme="dark"] {
             --primary: #f8fafc;
-            --accent: #60a5fa;
+            --accent: #4c9cff;
             --accent-muted: #1e293b;
             --surface: rgba(15, 23, 42, 0.95);
             --border: #334155;
@@ -39,7 +39,7 @@
             --text-light: #94a3b8;
 
             --sky: #0f172a;
-            --river: #1e293b;
+            --river: #031b42;
             --structure: #475569;
             --cloud: #1e293b; /* Darkened clouds for night */
 
@@ -207,6 +207,20 @@
 
         /* --- BUTTONS --- */
         .btn-row { display: flex; gap: 16px; margin: 30px 0; }
+        .dev-panel {
+            display: none;
+            position: absolute;
+            top: 56px;
+            right: 0;
+            width: 220px;
+            padding: 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 18px 35px rgba(15, 23, 42, 0.18);
+            z-index: 20;
+        }
+        .dev-panel button { width: 100%; margin: 0; }
 
         /* theme toggle button */
         #themeToggle {
@@ -280,10 +294,14 @@
 <div id="train-view"></div>
 
 <div class="container">
-    <div style="text-align:right; margin-bottom:20px;">
+    <div style="position: relative; text-align: right; margin-bottom: 20px;">
         <button id="themeToggle" onclick="toggleTheme()" style="padding:6px 12px; font-size:14px; cursor:pointer;">🌙</button>
+        <button id="devOptionsBtn" onclick="toggleDeveloperOptions()" style="padding:6px 12px; font-size:14px; cursor:pointer; margin-left:10px;">Developer Options</button>
+        <div id="devOptionsPanel" class="dev-panel">
+            <button class="add-btn" onclick="fillRandomValues();">Fill Random Values</button>
+        </div>
     </div>
-    <h1>StationMaster <span>Pro</span></h1>
+    <h1>Railway <span>Platform Management System</span></h1>
 
     <table id="trainTable">
         <thead>
@@ -302,7 +320,7 @@
 
     <div class="btn-row">
         <button class="add-btn" onclick="addRow()">+ Add New Train</button>
-        <button class="calc-btn" onclick="processSchedule()">Execute Simulation</button>
+        <button class="calc-btn" onclick="processSchedule()">Execute</button>
     </div>
 
     <div id="loading-tunnel">
@@ -391,6 +409,12 @@
         setTheme(current);
     }
 
+    function toggleDeveloperOptions() {
+        const panel = document.getElementById('devOptionsPanel');
+        if (!panel) return;
+        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    }
+
     function addRow() {
         const tbody = document.querySelector("#trainTable tbody");
         const row = document.createElement("tr");
@@ -411,6 +435,47 @@
         depInput.disabled = chk.checked;
         depInput.style.opacity = chk.checked ? "0.3" : "1";
         if(chk.checked) depInput.value = "";
+    }
+
+    function fillRandomValues() {
+        const rows = document.querySelectorAll("#trainTable tbody tr");
+        rows.forEach(row => {
+            // Train No: random 5-digit number
+            const trainNo = Math.floor(10000 + Math.random() * 90000);
+            row.querySelector('.tNo').value = trainNo;
+
+            // Priority: random selection
+            const prioOptions = row.querySelector('.prio').options;
+            const randomPrio = Math.floor(Math.random() * prioOptions.length);
+            prioOptions[randomPrio].selected = true;
+
+            // Arrival Time: random time today or tomorrow
+            const now = new Date();
+            const randomHours = Math.floor(Math.random() * 24) + 1; // 1-24 hours from now
+            const arrival = new Date(now.getTime() + randomHours * 60 * 60 * 1000);
+            const arrivalStr = arrival.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+            row.querySelector('.arr').value = arrivalStr;
+
+            // Departure Time: arrival + random 10-60 minutes
+            const randomMins = Math.floor(Math.random() * 51) + 10; // 10-60 mins
+            const departure = new Date(arrival.getTime() + randomMins * 60 * 1000);
+            const depStr = departure.toISOString().slice(0, 16);
+            row.querySelector('.dep').value = depStr;
+
+            // Last Stop: random true/false
+            const isLastStop = Math.random() > 0.5;
+            row.querySelector('.last-stop-chk').checked = isLastStop;
+
+            // Movement: random U, D, R
+            const types = ['U', 'D', 'R'];
+            const randomType = types[Math.floor(Math.random() * types.length)];
+            row.querySelector('.type').value = randomType;
+
+            // Trigger toggleDep if last stop
+            if (isLastStop) {
+                toggleDep(row.querySelector('.last-stop-chk'));
+            }
+        });
     }
 
     async function processSchedule() {
@@ -445,20 +510,29 @@
 
     function render(res) {
         const grid = document.getElementById("results");
+        const maxPlatform = Math.max(...res.schedule.map(t => t.platform));
         grid.innerHTML = res.schedule.map(t => {
             const a = new Date(t.arrival);
+            const day = a.getDate().toString().padStart(2, '0');
+            const month = (a.getMonth() + 1).toString().padStart(2, '0');
+            const year = a.getFullYear();
+            const formattedDate = `${day}/${month}/${year}`;
             return `
                 <div class="train-card ${t.isLastStop ? 'terminating' : ''}">
                     <span class="pf-tag">Platform ${t.platform}</span>
                     <h2># ${t.trainNo}</h2>
-                    <div class="card-detail"><b>Arrival</b> ${a.toLocaleDateString()} &middot; ${a.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                    <div class="card-detail"><b>Arrival</b> ${formattedDate} &middot; ${a.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12: true})}</div>
                     <div class="card-detail"><b>Departure / Yard</b> ${t.displayDep}</div>
                     <p class="status-text" style="color:${t.isLastStop ? 'var(--primary)':'var(--accent)'};">
                         ${t.isLastStop ? 'Terminating (Yard in 45m)' : 'Through Express'}
                     </p>
                 </div>
             `;
-        }).join('');
+        }).join('') + `<div style="margin-top:20px; text-align:center; font-weight:bold; grid-column: 1 / -1;">Total Platforms Used: ${maxPlatform}</div>`;
+    }
+
+    function automateFill(){
+
     }
 </script>
 </body>
