@@ -1,63 +1,71 @@
 // logic.js
 
 function calculateStationRequirements(trainList) {
-    const BUFFER = 10 * 60000; // 10 mins standard
-    const REVERSAL_BUFFER = 25 * 60000; // 25 mins for Point 6
-    const MAX_STAY = 60 * 60000; // 1 hour for Point 5
+    const BUFFER = 8 * 60000; 
+    const REVERSAL_BUFFER = 25 * 60000;
+    const TERMINATING_STAY = 40 * 60000; // Updated to 45 minutes as requested
 
-    // 1. Point 3: Filter out trains where Arrival == Departure
     const valid = trainList.filter(t => {
         const a = new Date(t.arrival).getTime();
-        const d = new Date(t.departure).getTime();
-        return a !== d;
+        return !isNaN(a);
     });
 
-    // 2. Pre-process and Sort by Arrival & Priority
-    const processed = valid.map(t => ({
-        ...t,
-        arr: new Date(t.arrival).getTime(),
-        dep: new Date(t.departure).getTime(),
-        // Priority Logic: Vande Bharat gets higher rank
-        priority: t.name.toLowerCase().includes("vande bharat") ? 10 : 1
-    })).sort((a, b) => {
+    // 2. Process times and resolve priorities
+    const processed = valid.map(t => {
+        const arr = new Date(t.arrival).getTime();
+        let dep = new Date(t.departure).getTime();
+
+        // Overwrite departure time if it is a Terminating train
+        if (t.isLastStop) {
+            dep = arr + TERMINATING_STAY;
+        } else if (dep < arr) {
+            // Failsafe: If user accidentally inputs departure BEFORE arrival, push it 1 day forward
+            dep += (24 * 60 * 60 * 1000); 
+        }
+
+        return { ...t, arr, dep };
+    }).sort((a, b) => {
+        // Sort chronologically by arrival. If tied, sort by priority (High = 10, Med = 5, Std = 1)
         if (a.arr !== b.arr) return a.arr - b.arr;
-        return b.priority - a.priority; // Higher priority first if times are same
+        return b.priority - a.priority; 
     });
 
-    let platforms = []; // Stores the "Free at" timestamp for each platform
+    let platforms = []; // Tracks the exact timestamp a platform becomes free
     let schedule = [];
 
+    // 3. Platform Assignment Logic
     processed.forEach(train => {
-        // Point 6: Apply Reversal Buffer if type is 'R'
         const currentBuffer = train.type === 'R' ? REVERSAL_BUFFER : BUFFER;
         
-        // Point 5: If stay is very long, move to yard after 1 hour to free platform
-        const platformRelease = (train.dep - train.arr) > MAX_STAY ? (train.arr + MAX_STAY) : train.dep;
-
-        // Point 4: Find first available platform (Sharing logic)
+        // Find the first platform that is free before this train arrives (accounting for buffer)
         let pIdx = platforms.findIndex(freeAt => (freeAt + currentBuffer) <= train.arr);
 
         if (pIdx === -1) {
-            platforms.push(platformRelease);
+            // No free platform found, create a new one
+            platforms.push(train.dep);
             pIdx = platforms.length - 1;
         } else {
-            platforms[pIdx] = platformRelease;
+            // Platform found, update its new "free at" time
+            platforms[pIdx] = train.dep;
         }
 
+        // Format dates beautifully to match the Minimalist UI
+        const depDateObj = new Date(train.dep);
+        const dateStr = depDateObj.toLocaleDateString();
+        const timeStr = depDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
         schedule.push({
-            name: train.name,
+            ...train,
             platform: pIdx + 1,
-            arrival: train.arrival,
-            departure: train.departure,
-            type: train.type,
-            priority: train.priority,
-            status: (train.dep - train.arr) > MAX_STAY ? "Moved to Yard (Long Stay)" : "Normal"
+            displayDep: train.isLastStop 
+                ? `${dateStr} &middot; ${timeStr} (Yard)` 
+                : `${dateStr} &middot; ${timeStr}`
         });
     });
 
-    return {
-        total: platforms.length,
-        schedule: schedule
+    return { 
+        total: platforms.length, 
+        schedule: schedule 
     };
 }
 

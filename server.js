@@ -4,26 +4,49 @@ const cors = require('cors');
 const { calculateStationRequirements } = require('./logic');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// API Route
 app.post('/calculate', (req, res) => {
     try {
         const { trains } = req.body;
+
+        // Security / Validation Guardrail
         if (!trains || !Array.isArray(trains)) {
-            return res.status(400).json({ success: false, error: "Invalid Data" });
+            console.warn("⚠️ Received invalid data format.");
+            return res.status(400).json({ 
+                success: false, 
+                error: "Invalid payload. 'trains' array is required." 
+            });
         }
 
+        console.log(`🚂 Processing schedule for ${trains.length} train(s)...`);
+
+        // Execute the logic
         const results = calculateStationRequirements(trains);
-        res.json({ success: true, results });
+        
+        // Return successful payload
+        res.status(200).json({ 
+            success: true, 
+            results: results 
+        });
+
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, error: "Server Calculation Error" });
+        console.error("❌ Server Error during calculation:", error);
+        res.status(500).json({ 
+            success: false, 
+            error: "Internal Server Error during platform calculation." 
+        });
     }
 });
 
+// Start Server
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`\n=========================================`);
+    console.log(`🚀 StationMaster API running on Port ${PORT}`);
+    console.log(`=========================================\n`);
 });
