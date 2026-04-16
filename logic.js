@@ -1,11 +1,10 @@
 // logic.js
 
 function calculateStationRequirements(trainList) {
-    const BUFFER = 10 * 60000;          // Standard 10 min buffer
-    const REVERSAL_BUFFER = 25 * 60000; // 25 min buffer for Reversal type
-    const TERMINATING_STAY = 45 * 60000; // 45 min yard-transfer stay
+    const BUFFER = 8 * 60000; 
+    const REVERSAL_BUFFER = 25 * 60000;
+    const TERMINATING_STAY = 40 * 60000; // Updated to 45 minutes as requested
 
-    // 1. Filter out invalid/empty data
     const valid = trainList.filter(t => {
         const a = new Date(t.arrival).getTime();
         return !isNaN(a);
