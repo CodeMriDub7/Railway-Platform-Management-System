@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Railway Platform Management System</title>
+    <title>StationMaster Pro | Minimalist Edition</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -31,7 +31,7 @@
         /* dark mode overrides */
         [data-theme="dark"] {
             --primary: #f8fafc;
-            --accent: #4c9cff;
+            --accent: #60a5fa;
             --accent-muted: #1e293b;
             --surface: rgba(15, 23, 42, 0.95);
             --border: #334155;
@@ -39,14 +39,15 @@
             --text-light: #94a3b8;
 
             --sky: #0f172a;
-            --river: #031b42;
+            --river: #1e293b;
             --structure: #475569;
-            --cloud: #1e293b; 
+            --cloud: #1e293b; /* Darkened clouds for night */
 
+            /* Dynamic Theme Variables (UX Fixes) */
             --card-bg: #1e293b;
             --input-focus: #0f172a;
-            --btn-text: #0f172a; 
-            --frame: #020617; 
+            --btn-text: #0f172a; /* Keeps calculate button text dark against bright primary */
+            --frame: #020617; /* Dark slate window frame */
         }
 
         /* --- PAGE BASE & FONTS --- */
@@ -92,6 +93,7 @@
             to { transform: translateX(-50%); }
         }
 
+        /* Flat Abstract River */
         .river {
             position: absolute; bottom: 0; width: 200%; height: 20%;
             background: var(--river);
@@ -99,6 +101,7 @@
             transition: background 0.3s;
         }
 
+        /* Minimalist Bridge */
         .bridge {
             position: absolute; bottom: 20%; width: 250px; height: 40px;
             background: transparent;
@@ -107,6 +110,7 @@
             transition: 0.3s;
         }
 
+        /* Abstract Electricity Tower */
         .tower {
             position: absolute; bottom: 20%; width: 2px; height: 140px;
             background: var(--structure);
@@ -119,6 +123,7 @@
         .tower::before { top: 20px; }
         .tower::after { top: 60px; left: -24px; width: 50px; }
 
+        /* Pill-shaped Clouds */
         .cloud {
             position: absolute; height: 24px;
             background: var(--cloud);
@@ -132,6 +137,7 @@
             transition: background 0.3s;
         }
 
+        /* Line-art Birds */
         .bird {
             position: absolute; width: 12px; height: 12px;
             border-top: 2px solid var(--text-light);
@@ -168,6 +174,7 @@
         }
         h1 span { font-weight: 600; color: var(--accent); }
 
+        /* --- TABLE UI --- */
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th { 
             padding: 16px 12px; text-align: left; color: var(--text-light); 
@@ -189,13 +196,19 @@
             border-radius: 4px;
         }
         input:focus, select:focus { border-color: var(--accent); background: var(--input-focus); }
+        
+        /* Fix for invisible dropdown options in dark mode */
         select option { background: var(--card-bg); color: var(--text-main); }
+        
+        /* Fix for invisible calendar icon in dark mode */
         [data-theme="dark"] input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
 
         .last-stop-chk { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
 
+        /* --- BUTTONS --- */
         .btn-row { display: flex; gap: 16px; margin: 30px 0; }
 
+        /* theme toggle button */
         #themeToggle {
             background: var(--surface);
             color: var(--text-main);
@@ -217,6 +230,7 @@
         .add-btn:hover { background: var(--surface); border-color: var(--text-light); }
         .calc-btn:hover { background: var(--text-main); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
 
+        /* --- MINIMALIST LOADING TRAIN --- */
         #loading-tunnel { 
             display: none; background: transparent; 
             height: 80px; position: relative; overflow: hidden; margin: 40px 0; 
@@ -236,6 +250,7 @@
         }
         @keyframes drive { from { left: -1000px; } to { left: 100%; } }
 
+        /* --- RESULTS GRID --- */
         .results-grid { 
             display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 40px;
         }
@@ -268,7 +283,7 @@
     <div style="text-align:right; margin-bottom:20px;">
         <button id="themeToggle" onclick="toggleTheme()" style="padding:6px 12px; font-size:14px; cursor:pointer;">🌙</button>
     </div>
-    <h1>Railway <span>Platform Management System</span></h1>
+    <h1>StationMaster <span>Pro</span></h1>
 
     <table id="trainTable">
         <thead>
@@ -310,10 +325,12 @@
         scene.className = 'scenery';
         view.appendChild(scene);
 
+        // Abstract river
         const river = document.createElement('div');
         river.className = 'river';
         scene.appendChild(river);
 
+        // Abstract bridges & towers
         for (let i = 0; i < 5; i++) {
             const br = document.createElement('div');
             br.className = 'bridge';
@@ -326,6 +343,7 @@
             scene.appendChild(tw);
         }
 
+        // Generate minimalist clouds and birds
         for (let i = 0; i < 5; i++) createCloud(scene);
         for (let i = 0; i < 8; i++) createBird(scene);
     }
@@ -357,6 +375,7 @@
         parent.appendChild(bird);
     }
 
+    /* theme handling */
     function initTheme() {
         const saved = localStorage.getItem('theme') || 'light';
         setTheme(saved);
