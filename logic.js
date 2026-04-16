@@ -1,8 +1,8 @@
 // logic.js
 function calculateStationRequirements(trainList) {
-    const BUFFER = 10 * 60000; 
+    const BUFFER = 8 * 60000; 
     const REVERSAL_BUFFER = 25 * 60000;
-    const TERMINATING_STAY = 45 * 60000; // Updated to 45 minutes as requested
+    const TERMINATING_STAY = 40 * 60000; // Updated to 45 minutes as requested
 
     const valid = trainList.filter(t => {
         const a = new Date(t.arrival).getTime();
