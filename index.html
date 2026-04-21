@@ -18,7 +18,7 @@
             /* Scenery Colors */
             --sky: #f0f9ff;
             --river: #27a4f79d;
-            --structure: #cbd5e1;
+            --structure: #95a8c0;
             --cloud: #ffffff;
 
             /* Dynamic Theme Variables (UX Fixes) */
@@ -287,6 +287,13 @@
         .card-detail { margin: 8px 0; font-size: 14px; color: var(--text-light); }
         .card-detail b { color: var(--text-main); font-weight: 500; display: inline-block; width: 140px;}
         .status-text { margin-top: 20px; font-weight: 500; font-size: 13px; }
+
+        /* Highlight styling */
+        tr.highlighted { background-color: var(--accent-muted); }
+        .train-card.highlighted { 
+            box-shadow: 0 0 0 3px var(--accent), 0 4px 12px rgba(0,0,0,0.2);
+            border-color: var(--accent);
+        }
     </style>
 </head>
 <body>
@@ -299,6 +306,7 @@
         <button id="devOptionsBtn" onclick="toggleDeveloperOptions()" style="padding:6px 12px; font-size:14px; cursor:pointer; margin-left:10px;">Developer Options</button>
         <div id="devOptionsPanel" class="dev-panel">
             <button class="add-btn" onclick="fillRandomValues();">Fill Random Values</button>
+            <button class="add-btn" onclick="clearAllInputs();" style="margin-top: 8px;">Clear All Inputs</button>
         </div>
     </div>
     <h1>Railway <span>Platform Management System</span></h1>
@@ -427,6 +435,12 @@
             <td><select class="type"><option value="U">Up</option><option value="D">Down</option><option value="R">Reversal</option></select></td>
             <td><button onclick="this.parentElement.parentElement.remove()" style="color:#ef4444; background:none; border:none; cursor:pointer; font-size:16px; padding:0; width:auto;">✕</button></td>
         `;
+        
+        // Add click handler to highlight on train number change
+        row.querySelector('.tNo').addEventListener('change', function() {
+            highlightMatch(this.value);
+        });
+        
         tbody.appendChild(row);
     }
 
@@ -478,6 +492,12 @@
         });
     }
 
+    function clearAllInputs() {
+        const tbody = document.querySelector("#trainTable tbody");
+        tbody.innerHTML = "";
+        document.getElementById("results").innerHTML = "";
+    }
+
     async function processSchedule() {
         const rows = document.querySelectorAll("tbody tr");
         const trains = Array.from(rows).map(r => ({
@@ -511,14 +531,20 @@
     function render(res) {
         const grid = document.getElementById("results");
         const maxPlatform = Math.max(...res.schedule.map(t => t.platform));
-        grid.innerHTML = res.schedule.map(t => {
+        
+        // Sort by arrival time
+        const sortedSchedule = res.schedule.sort((a, b) => {
+            return new Date(a.arrival).getTime() - new Date(b.arrival).getTime();
+        });
+        
+        grid.innerHTML = sortedSchedule.map(t => {
             const a = new Date(t.arrival);
             const day = a.getDate().toString().padStart(2, '0');
             const month = (a.getMonth() + 1).toString().padStart(2, '0');
             const year = a.getFullYear();
             const formattedDate = `${day}/${month}/${year}`;
             return `
-                <div class="train-card ${t.isLastStop ? 'terminating' : ''}">
+                <div class="train-card ${t.isLastStop ? 'terminating' : ''}" data-train-no="${t.trainNo}" onclick="highlightMatch('${t.trainNo}')">
                     <span class="pf-tag">Platform ${t.platform}</span>
                     <h2># ${t.trainNo}</h2>
                     <div class="card-detail"><b>Arrival</b> ${formattedDate} &middot; ${a.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12: true})}</div>
@@ -529,6 +555,29 @@
                 </div>
             `;
         }).join('') + `<div style="margin-top:20px; text-align:center; font-weight:bold; grid-column: 1 / -1;">Total Platforms Used: ${maxPlatform}</div>`;
+    }
+
+    function highlightMatch(trainNo) {
+        // Clear all highlights
+        document.querySelectorAll('tr.highlighted').forEach(r => r.classList.remove('highlighted'));
+        document.querySelectorAll('.train-card.highlighted').forEach(c => c.classList.remove('highlighted'));
+        
+        if (!trainNo) return;
+        
+        // Highlight matching row in table
+        const rows = document.querySelectorAll("#trainTable tbody tr");
+        rows.forEach(row => {
+            if (row.querySelector('.tNo').value === trainNo.toString()) {
+                row.classList.add('highlighted');
+            }
+        });
+        
+        // Highlight matching card in results
+        const card = document.querySelector(`.train-card[data-train-no="${trainNo}"]`);
+        if (card) {
+            card.classList.add('highlighted');
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     }
 
     function automateFill(){
