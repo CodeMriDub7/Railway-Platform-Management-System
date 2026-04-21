@@ -344,6 +344,8 @@
 
 <script>
     window.onload = () => { addRow(); initView(); initTheme(); };
+    
+    let currentSchedule = null; // Store schedule for CSV export
 
     function initView() {
         const view = document.getElementById('train-view');
@@ -532,6 +534,9 @@
         const grid = document.getElementById("results");
         const maxPlatform = Math.max(...res.schedule.map(t => t.platform));
         
+        // Store schedule for CSV export
+        currentSchedule = res.schedule;
+        
         // Sort by arrival time
         const sortedSchedule = res.schedule.sort((a, b) => {
             return new Date(a.arrival).getTime() - new Date(b.arrival).getTime();
@@ -554,7 +559,48 @@
                     </p>
                 </div>
             `;
-        }).join('') + `<div style="margin-top:20px; text-align:center; font-weight:bold; grid-column: 1 / -1;">Total Platforms Used: ${maxPlatform}</div>`;
+        }).join('') + `<div style="margin-top:20px; text-align:center; font-weight:bold; grid-column: 1 / -1; padding: 20px;">Total Platforms Used: ${maxPlatform}</div>` +
+        `<div style="grid-column: 1 / -1; text-align:center; margin-bottom:20px;"><button class="calc-btn" onclick="downloadCSV()" style="max-width:300px; margin:0 auto;">📥 Save Chart (CSV)</button></div>`;
+    }
+
+    function downloadCSV() {
+        if (!currentSchedule || currentSchedule.length === 0) {
+            alert("No data to export. Please run the schedule first.");
+            return;
+        }
+
+        // Prepare CSV header
+        const headers = ["Train No.", "Priority", "Arrival Time", "Departure Time", "Platform", "Movement Type", "Is Last Stop"];
+        
+        // Prepare CSV rows
+        const rows = currentSchedule.map(t => [
+            t.trainNo,
+            t.priority === 10 ? "High" : t.priority === 5 ? "Medium" : "Standard",
+            new Date(t.arrival).toLocaleString(),
+            new Date(t.dep).toLocaleString(),
+            t.platform,
+            t.type === 'U' ? 'Up' : t.type === 'D' ? 'Down' : 'Reversal',
+            t.isLastStop ? 'Yes' : 'No'
+        ]);
+
+        // Escape and format CSV content
+        const csvContent = [
+            headers.map(h => `"${h}"`).join(','),
+            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
+
+        // Create blob and download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `railway-schedule-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     function highlightMatch(trainNo) {
