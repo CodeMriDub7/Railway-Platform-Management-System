@@ -2,7 +2,7 @@
 
 A web app that automatically assigns railway platforms to incoming trains based on arrival/departure times, priority, and movement type — helping simulate how a station master decides which train gets which platform, and when a platform frees up for the next one.
 
-Live demo: **[smarterplatform.com](https://smarterplatform.com)**
+
 
 ![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-Vanilla-F7DF1E?logo=javascript&logoColor=black)
